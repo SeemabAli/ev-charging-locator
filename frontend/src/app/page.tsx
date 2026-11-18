@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Zap,
   Activity,
@@ -14,6 +15,8 @@ import {
   RefreshCw,
   Layers,
   Terminal,
+  Navigation,
+  Sparkles,
 } from 'lucide-react';
 import { fetchApiHealth, ApiHealthResponse } from '@/lib/api';
 
@@ -37,9 +40,9 @@ export default function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
       {/* Hero Section */}
-      <div className="text-center space-y-4 max-w-3xl mx-auto pt-4">
+      <div className="text-center space-y-5 max-w-3xl mx-auto pt-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold tracking-wide uppercase">
-          <Zap className="w-3.5 h-3.5 fill-emerald-600" /> Phase 1 Foundation Active
+          <Zap className="w-3.5 h-3.5 fill-emerald-600" /> Phase 3 Full-Stack Application Ready
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
           Smart Electric Vehicle <br />
@@ -48,22 +51,50 @@ export default function HomePage() {
           </span>
         </h1>
         <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-          Locate nearby charging stations in real-time, inspect charging point connector types,
-          and reserve guaranteed time slots with zero double-booking conflicts.
+          Locate nearby charging stations in real-time on interactive maps, inspect charger connector types and power specifications, and reserve guaranteed time slots with zero collision.
         </p>
+
+        {/* Hero Actions */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link
+            href="/stations"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 transition"
+          >
+            <Navigation className="w-4 h-4" /> Find Nearby Stations
+          </Link>
+          <Link
+            href="/operator"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm shadow-2xs transition"
+          >
+            Operator Dashboard
+          </Link>
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm shadow-2xs transition"
+          >
+            Admin Governance
+          </Link>
+        </div>
       </div>
 
       {/* Backend Connection & Health Card */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl ${apiHealth ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            <div
+              className={`p-3 rounded-xl ${
+                apiHealth ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
               <Activity className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900">Backend API Connection Status</h2>
               <p className="text-xs text-slate-500">
-                Testing connection to Express API server at <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono">http://localhost:5000/api/health</code>
+                Connected to Express RESTful API at{' '}
+                <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono">
+                  http://localhost:5000/api
+                </code>
               </p>
             </div>
           </div>
@@ -103,7 +134,9 @@ export default function HomePage() {
               {apiHealth?.service || 'Express Server'}
             </div>
             <div className="text-xs text-slate-500">
-              {apiHealth ? `Status: ${apiHealth.status} (v${apiHealth.version})` : 'Offline or not started'}
+              {apiHealth
+                ? `Status: ${apiHealth.status} (v${apiHealth.version})`
+                : 'Run npm.cmd run dev in backend/'}
             </div>
           </div>
 
@@ -112,20 +145,20 @@ export default function HomePage() {
               <Database className="w-4 h-4 text-teal-600" /> Database Connection
             </div>
             <div className="text-lg font-bold text-slate-800">
-              {apiHealth?.database?.connected ? 'MongoDB Connected' : 'Configured / Pending'}
+              {apiHealth?.database?.connected ? 'MongoDB Connected' : 'Configured / Ready'}
             </div>
             <div className="text-xs text-slate-500">
               {apiHealth
-                ? `DB State: ${apiHealth.database.status}`
+                ? `DB Status: ${apiHealth.database.status}`
                 : 'MongoDB Atlas URI in backend/.env'}
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
             <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-              <Terminal className="w-4 h-4 text-indigo-600" /> Architecture
+              <Terminal className="w-4 h-4 text-indigo-600" /> Maps & Geolocation
             </div>
-            <div className="text-lg font-bold text-slate-800">TypeScript Monorepo</div>
+            <div className="text-lg font-bold text-slate-800">Leaflet + OpenStreetMap</div>
             <div className="text-xs text-slate-500">
               Last probe: {lastChecked || 'Initial render'}
             </div>
@@ -136,7 +169,7 @@ export default function HomePage() {
       {/* 3 Core Roles Section */}
       <div className="space-y-6">
         <div className="text-center max-w-xl mx-auto">
-          <h2 className="text-2xl font-bold text-slate-900">Functional Modules (Phase 2 & 3)</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Functional Modules (Ready)</h2>
           <p className="text-sm text-slate-500">
             Tailored interfaces with Role-Based Access Control
           </p>
@@ -144,12 +177,18 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* EV User */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-500 transition group space-y-4">
+          <Link
+            href="/stations"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-500 hover:shadow-md transition group space-y-4 text-left"
+          >
             <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
               <MapPin className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900">1. EV Driver Portal</h3>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-between">
+                1. EV Driver Portal
+                <ArrowRight className="w-4 h-4 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h3>
               <p className="text-xs text-slate-500">Customer Station Discovery & Reservations</p>
             </div>
             <ul className="text-xs text-slate-600 space-y-2">
@@ -160,21 +199,27 @@ export default function HomePage() {
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Filter by connector (Type 2, CCS, CHAdeMO)
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Real-time slot booking with zero double-booking
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Real-time slot booking with zero collision
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Booking history & cancellation
               </li>
             </ul>
-          </div>
+          </Link>
 
           {/* Station Operator */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-teal-500 transition group space-y-4">
+          <Link
+            href="/operator"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-teal-500 hover:shadow-md transition group space-y-4 text-left"
+          >
             <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center group-hover:scale-105 transition-transform">
               <CalendarCheck className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900">2. Operator Dashboard</h3>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-between">
+                2. Operator Dashboard
+                <ArrowRight className="w-4 h-4 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h3>
               <p className="text-xs text-slate-500">Charging Station & Slot Management</p>
             </div>
             <ul className="text-xs text-slate-600 space-y-2">
@@ -191,15 +236,21 @@ export default function HomePage() {
                 <CheckCircle2 className="w-3.5 h-3.5 text-teal-500" /> View & update driver reservation statuses
               </li>
             </ul>
-          </div>
+          </Link>
 
           {/* Admin */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-500 transition group space-y-4">
+          <Link
+            href="/admin"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-indigo-500 hover:shadow-md transition group space-y-4 text-left"
+          >
             <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition-transform">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900">3. Admin Management</h3>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center justify-between">
+                3. Admin Management
+                <ArrowRight className="w-4 h-4 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h3>
               <p className="text-xs text-slate-500">Supervisory Governance & Network Audits</p>
             </div>
             <ul className="text-xs text-slate-600 space-y-2">
@@ -216,30 +267,7 @@ export default function HomePage() {
                 <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" /> Platform security & RBAC enforcement
               </li>
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* CI/CD & Roadmap Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-semibold text-emerald-400">
-            <Layers className="w-4 h-4" /> Next Milestone: Phase 2 (Database Design & Backend APIs)
-          </div>
-          <h3 className="text-xl font-bold">Ready to build Mongoose Models and Auth APIs?</h3>
-          <p className="text-xs text-slate-300 max-w-xl">
-            We will implement MongoDB Atlas models, JWT authentication, 2dsphere station queries, and database-level slot reservation concurrency safety.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href="http://localhost:5000/api/health"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition"
-          >
-            Inspect API Health JSON <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </div>
