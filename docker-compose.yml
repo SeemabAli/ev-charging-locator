@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ev-chargepoint-backend
+    restart: always
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://seemabali_db_user:3ktpCcRHNK1TdTFk@ev-charger-db.ku05swu.mongodb.net/ev-chargepoint?retryWrites=true&w=majority}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_production_change_me}
+      - JWT_EXPIRES_IN=7d
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+    ports:
+      - "5000:5000"
+    networks:
+      - ev-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    container_name: ev-chargepoint-frontend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - ev-network
+
+networks:
+  ev-network:
+    driver: bridge

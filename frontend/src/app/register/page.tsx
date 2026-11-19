@@ -4,7 +4,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Zap, UserPlus, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Zap,
+  UserPlus,
+  AlertCircle,
+  Loader2,
+  CheckCircle2,
+  User,
+  Mail,
+  Phone,
+  Lock,
+} from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,8 +22,9 @@ export default function RegisterPage() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'user' | 'operator'>('user');
 
   const [loading, setLoading] = useState(false);
@@ -21,24 +32,28 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setLoading(true);
     const res = await register({
       name,
       email,
+      phone,
       password,
       role,
-      phone,
     });
-
     setLoading(false);
 
     if (res.success) {
       if (role === 'operator') {
         router.push('/operator');
       } else {
-        router.push('/stations');
+        router.push('/dashboard');
       }
     } else {
       setError(res.message || 'Registration failed');
@@ -46,35 +61,31 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
-            <Zap className="w-6 h-6 fill-white" />
+    <div className="min-h-[calc(100vh-80px)] grid grid-cols-1 lg:grid-cols-12 bg-white">
+      {/* Left: Clean Form Side (7 cols) */}
+      <div className="lg:col-span-7 flex items-center justify-center p-8 sm:p-12 lg:p-16">
+        <div className="max-w-md w-full space-y-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mint text-navy text-xs font-bold uppercase">
+              <Zap className="w-3.5 h-3.5 fill-navy" /> Join EV ChargePoint
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-navy tracking-tight">
+              Create an Account
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-text">
+              Select your role and start reserving or hosting EV charging bays
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-slate-900">Create an Account</h2>
-          <p className="text-xs text-slate-500">
-            Join EV ChargePoint as an EV Driver or Charging Station Operator
-          </p>
-        </div>
 
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Role selector buttons */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+          {/* Role Selection Buttons */}
+          <div className="grid grid-cols-2 gap-2 p-1.5 bg-light-bg rounded-2xl border border-border">
             <button
               type="button"
               onClick={() => setRole('user')}
-              className={`py-2 rounded-lg font-semibold text-xs transition ${
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
                 role === 'user'
-                  ? 'bg-white text-emerald-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-navy text-lime shadow-sm'
+                  : 'text-dark-text hover:text-navy'
               }`}
             >
               🚗 EV Driver
@@ -82,79 +93,158 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setRole('operator')}
-              className={`py-2 rounded-lg font-semibold text-xs transition ${
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
                 role === 'operator'
-                  ? 'bg-white text-teal-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-navy text-lime shadow-sm'
+                  : 'text-dark-text hover:text-navy'
               }`}
             >
               ⚡ Station Operator
             </button>
           </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Full Name</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alex Johnson"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+          {error && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-danger text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-danger shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+            <div>
+              <label className="block text-dark-text font-semibold mb-1">Full Name</label>
+              <div className="relative">
+                <User className="w-4 h-4 text-muted-text absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Alex Johnson"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-navy text-dark-text"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-dark-text font-semibold mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-muted-text absolute left-3.5 top-3" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="alex@example.com"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-navy text-dark-text"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-dark-text font-semibold mb-1">Phone Number</label>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-muted-text absolute left-3.5 top-3" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 019-2834"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-navy text-dark-text"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-dark-text font-semibold mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-muted-text absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 6 chars"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-navy text-dark-text"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-dark-text font-semibold mb-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-muted-text absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat password"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-navy text-dark-text"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-lime hover:bg-lime-hover text-navy font-bold text-xs shadow-md shadow-lime/20 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <UserPlus className="w-4 h-4" />
+              )}
+              {loading
+                ? 'Creating account...'
+                : `Register as ${role === 'user' ? 'EV Driver' : 'Station Operator'}`}
+            </button>
+          </form>
+
+          <div className="text-center text-xs text-muted-text pt-3 border-t border-border">
+            Already have an account?{' '}
+            <Link href="/login" className="text-navy font-bold hover:underline">
+              Sign in
+            </Link>
           </div>
+        </div>
+      </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Email Address</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@example.com"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+      {/* Right: EV Visual Showcase Side (5 cols) */}
+      <div className="hidden lg:flex lg:col-span-5 bg-navy text-white p-12 flex-col justify-between relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-lime/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-lime flex items-center justify-center text-navy shadow-lg">
+            <Zap className="w-6 h-6 fill-navy" />
           </div>
+          <h3 className="text-2xl font-black text-white">Join the Mobility Revolution</h3>
+          <p className="text-xs text-muted-text leading-relaxed">
+            Whether you charge your personal EV or run a commercial fast-charging hub, EV ChargePoint gives you real-time transparency and control.
+          </p>
+        </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Password</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 6 characters"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+        <div className="relative z-10 space-y-3 bg-navy-light/70 border border-navy-light p-6 rounded-3xl text-xs">
+          <div className="font-bold text-lime">Account Benefits:</div>
+          <div className="flex items-center gap-2 text-muted-text">
+            <CheckCircle2 className="w-4 h-4 text-lime" />
+            <span className="text-white">Drivers: Reserve slots in advance & avoid queues</span>
           </div>
-
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Phone (Optional)</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 555-0199"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-            />
+          <div className="flex items-center gap-2 text-muted-text">
+            <CheckCircle2 className="w-4 h-4 text-lime" />
+            <span className="text-white">Operators: Define custom hourly rates & time slots</span>
           </div>
+          <div className="flex items-center gap-2 text-muted-text">
+            <CheckCircle2 className="w-4 h-4 text-lime" />
+            <span className="text-white">Admins: Verify and supervise physical stations</span>
+          </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            {loading ? 'Creating account...' : `Register as ${role === 'user' ? 'EV Driver' : 'Station Operator'}`}
-          </button>
-        </form>
-
-        <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
-          Already registered?{' '}
-          <Link href="/login" className="text-emerald-600 font-bold hover:underline">
-            Sign in
-          </Link>
+        <div className="relative z-10 text-[11px] text-muted-text">
+          &copy; {new Date().getFullYear()} EV ChargePoint Inc.
         </div>
       </div>
     </div>

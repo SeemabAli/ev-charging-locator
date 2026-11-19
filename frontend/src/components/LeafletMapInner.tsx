@@ -13,31 +13,31 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom Station Marker Icon
+// Custom Station Marker Icon (Deep Navy + Electric Lime pin)
 const stationIcon = L.divIcon({
   className: 'custom-station-pin',
   html: `
     <div style="
-      background: #059669;
-      color: white;
-      width: 36px;
-      height: 36px;
+      background: #101C2C;
+      color: #B7F34A;
+      width: 38px;
+      height: 38px;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 10px rgba(5, 150, 105, 0.4);
-      border: 2px solid white;
+      box-shadow: 0 4px 14px rgba(16, 28, 44, 0.4);
+      border: 2px solid #B7F34A;
     ">
-      <svg style="transform: rotate(45deg); width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24">
+      <svg style="transform: rotate(45deg); width: 20px; height: 20px; fill: #B7F34A;" viewBox="0 0 24 24">
         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
       </svg>
     </div>
   `,
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -36],
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+  popupAnchor: [0, -38],
 });
 
 // User Location Pin
@@ -45,12 +45,12 @@ const userLocationIcon = L.divIcon({
   className: 'custom-user-pin',
   html: `
     <div style="
-      background: #2563eb;
+      background: #B7F34A;
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.25);
+      border: 3px solid #101C2C;
+      box-shadow: 0 0 0 6px rgba(183, 243, 74, 0.4);
     "></div>
   `,
   iconSize: [22, 22],
@@ -78,7 +78,6 @@ export default function LeafletMapInner({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // Initialize map instance
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -92,10 +91,9 @@ export default function LeafletMapInner({
       zoomControl: true,
     });
 
-    // OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(map);
 
@@ -108,21 +106,18 @@ export default function LeafletMapInner({
     };
   }, []);
 
-  // Update markers when stations or selection change
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
 
     markersLayerRef.current.clearLayers();
 
-    // Render User Location marker if available
     if (userLocation) {
       const userMarker = L.marker([userLocation.lat, userLocation.lng], {
         icon: userLocationIcon,
-      }).bindPopup('<b>Your Current Location</b>');
+      }).bindPopup('<b style="font-family: sans-serif; font-size: 12px;">Your Current Location</b>');
       markersLayerRef.current.addLayer(userMarker);
     }
 
-    // Render Station Markers
     stations.forEach((station) => {
       if (
         station.location &&
@@ -130,32 +125,32 @@ export default function LeafletMapInner({
         station.location.coordinates.length === 2
       ) {
         const [lng, lat] = station.location.coordinates;
-
         const marker = L.marker([lat, lng], { icon: stationIcon });
 
         const popupContent = `
-          <div style="min-width: 180px; font-family: sans-serif;">
-            <div style="font-weight: bold; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
+          <div style="min-width: 200px; font-family: Inter, sans-serif; padding: 4px;">
+            <div style="font-weight: 800; font-size: 14px; color: #101C2C; margin-bottom: 2px;">
               ${station.name}
             </div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">
+            <div style="font-size: 11px; color: #75818C; margin-bottom: 8px;">
               ${station.address}, ${station.city}
             </div>
-            <div style="font-size: 11px; color: #059669; font-weight: 600; margin-bottom: 8px;">
-              ⚡ ${station.availableChargers ?? 'Multiple'} Available Chargers
+            <div style="font-size: 11px; color: #16A36A; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 4px;">
+              ⚡ ${station.availableChargers ?? 3} Available Charging Bays
             </div>
             <button id="station-btn-${station._id}" style="
               width: 100%;
-              background: #059669;
-              color: white;
+              background: #B7F34A;
+              color: #101C2C;
               border: none;
-              border-radius: 6px;
-              padding: 6px 10px;
+              border-radius: 8px;
+              padding: 8px 12px;
               font-size: 12px;
-              font-weight: 600;
+              font-weight: 800;
               cursor: pointer;
+              transition: opacity 0.2s;
             ">
-              View & Book Slots
+              Select & Reserve Slot &rarr;
             </button>
           </div>
         `;
@@ -177,7 +172,6 @@ export default function LeafletMapInner({
 
         markersLayerRef.current?.addLayer(marker);
 
-        // Auto open popup if selected
         if (selectedStationId === station._id) {
           marker.openPopup();
           mapInstanceRef.current?.setView([lat, lng], 14, { animate: true });
@@ -189,7 +183,7 @@ export default function LeafletMapInner({
   return (
     <div
       ref={mapContainerRef}
-      className="w-full h-full min-h-[450px] rounded-2xl z-0 overflow-hidden shadow-inner border border-slate-200"
+      className="w-full h-full min-h-[500px] rounded-3xl z-0 overflow-hidden shadow-sm border border-border"
     />
   );
 }

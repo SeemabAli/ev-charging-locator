@@ -9,19 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
-          950: '#022c22',
+        navy: {
+          DEFAULT: '#101C2C',
+          light: '#18293E',
+          dark: '#0A121D',
         },
+        lime: {
+          DEFAULT: '#B7F34A',
+          hover: '#A3E635',
+          light: '#DDF8B5',
+        },
+        mint: '#DDF8B5',
+        'light-bg': '#F6F8F5',
+        'dark-text': '#17232F',
+        'muted-text': '#75818C',
+        border: '#E6EBE6',
+        success: '#16A36A',
+        warning: '#E9A23B',
+        danger: '#DC5252',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
     },
   },

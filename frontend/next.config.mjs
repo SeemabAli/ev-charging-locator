@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Allow rewrites if needed or direct API calls
+  output: 'standalone',
   async rewrites() {
     return [
       {

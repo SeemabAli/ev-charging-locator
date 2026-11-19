@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -11,100 +11,128 @@ import {
   UserCheck,
   ShieldCheck,
   LogOut,
-  User as UserIcon,
-  LogIn,
+  LayoutDashboard,
+  Menu,
+  X,
   Sparkles,
 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout, quickLoginAs } = useAuth();
-
-  const navLinks = [
-    { href: '/stations', label: 'Find Stations', icon: MapPin },
-    { href: '/my-bookings', label: 'My Bookings', icon: Calendar },
-    ...(user?.role === 'operator' || user?.role === 'admin'
-      ? [{ href: '/operator', label: 'Operator Portal', icon: UserCheck }]
-      : []),
-    ...(user?.role === 'admin'
-      ? [{ href: '/admin', label: 'Admin Portal', icon: ShieldCheck }]
-      : []),
-  ];
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#E6EBE6]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-              <Zap className="w-6 h-6 fill-white" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-navy flex items-center justify-center text-lime shadow-md transition-transform group-hover:scale-105">
+              <Zap className="w-5 h-5 fill-lime" />
             </div>
-            <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
-                EV ChargePoint
+            <div className="flex flex-col">
+              <span className="text-xl font-black text-navy tracking-tight leading-none">
+                EV <span className="text-navy">ChargePoint</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                Phase 3 Active
+              <span className="text-[10px] font-semibold text-muted-text tracking-widest uppercase mt-0.5">
+                Electric Mobility
               </span>
             </div>
           </Link>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-1.5 transition-colors ${
-                    isActive
-                      ? 'text-emerald-600 font-semibold'
-                      : 'text-slate-600 hover:text-emerald-600'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </Link>
-              );
-            })}
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-dark-text">
+            <Link
+              href="/"
+              className={`hover:text-navy transition-colors ${
+                pathname === '/' ? 'text-navy font-bold' : 'text-muted-text'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              href="/stations"
+              className={`hover:text-navy transition-colors ${
+                pathname === '/stations' ? 'text-navy font-bold' : 'text-muted-text'
+              }`}
+            >
+              Find Stations
+            </Link>
+            <Link
+              href="/#how-it-works"
+              className="text-muted-text hover:text-navy transition-colors"
+            >
+              How It Works
+            </Link>
+            <Link
+              href="/#about"
+              className="text-muted-text hover:text-navy transition-colors"
+            >
+              About
+            </Link>
+            {user && (
+              <Link
+                href="/dashboard"
+                className={`flex items-center gap-1.5 hover:text-navy transition-colors ${
+                  pathname === '/dashboard' ? 'text-navy font-bold' : 'text-muted-text'
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4 text-navy" />
+                Dashboard
+              </Link>
+            )}
+            {(user?.role === 'operator' || user?.role === 'admin') && (
+              <Link
+                href="/operator"
+                className={`flex items-center gap-1.5 hover:text-navy transition-colors ${
+                  pathname === '/operator' ? 'text-navy font-bold' : 'text-muted-text'
+                }`}
+              >
+                <UserCheck className="w-4 h-4" />
+                Operator
+              </Link>
+            )}
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin"
+                className={`flex items-center gap-1.5 hover:text-navy transition-colors ${
+                  pathname === '/admin' ? 'text-navy font-bold' : 'text-muted-text'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
           </nav>
 
-          {/* User state and Quick Demo Switcher */}
-          <div className="flex items-center gap-3">
-            {/* Quick Demo Role Switcher */}
-            <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-lg text-xs">
-              <span className="text-slate-400 px-2 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" /> Demo:
+          {/* Right Action Buttons */}
+          <div className="hidden lg:flex items-center gap-4">
+            {/* Quick Demo Switcher Pill */}
+            <div className="flex items-center bg-light-bg border border-border px-2 py-1 rounded-full text-xs">
+              <span className="text-muted-text text-[11px] font-medium mr-1.5 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-warning" /> Demo:
               </span>
               <button
                 onClick={() => quickLoginAs('user')}
-                className={`px-2 py-1 rounded font-medium transition ${
-                  user?.role === 'user'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition ${
+                  user?.role === 'user' ? 'bg-navy text-lime' : 'text-dark-text hover:text-navy'
                 }`}
               >
                 Driver
               </button>
               <button
                 onClick={() => quickLoginAs('operator')}
-                className={`px-2 py-1 rounded font-medium transition ${
-                  user?.role === 'operator'
-                    ? 'bg-white text-teal-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition ${
+                  user?.role === 'operator' ? 'bg-navy text-lime' : 'text-dark-text hover:text-navy'
                 }`}
               >
                 Operator
               </button>
               <button
                 onClick={() => quickLoginAs('admin')}
-                className={`px-2 py-1 rounded font-medium transition ${
-                  user?.role === 'admin'
-                    ? 'bg-white text-indigo-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition ${
+                  user?.role === 'admin' ? 'bg-navy text-lime' : 'text-dark-text hover:text-navy'
                 }`}
               >
                 Admin
@@ -113,38 +141,110 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <div className="text-xs font-bold text-slate-800">{user.name}</div>
-                  <div className="text-[10px] uppercase font-semibold text-emerald-600 tracking-wider">
+                <Link
+                  href="/dashboard"
+                  className="flex flex-col text-right hover:opacity-80 transition"
+                >
+                  <span className="text-xs font-bold text-dark-text">{user.name}</span>
+                  <span className="text-[10px] uppercase font-bold text-success tracking-wider">
                     {user.role}
-                  </div>
-                </div>
+                  </span>
+                </Link>
                 <button
                   onClick={logout}
-                  title="Log out"
-                  className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                  title="Sign out"
+                  className="p-2 text-muted-text hover:text-danger hover:bg-rose-50 rounded-xl transition"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-emerald-600 transition flex items-center gap-1"
+                  className="px-4 py-2 text-xs font-semibold text-dark-text hover:text-navy transition"
                 >
-                  <LogIn className="w-3.5 h-3.5" /> Log in
+                  Log in
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition"
+                  className="px-5 py-2.5 rounded-xl bg-lime hover:bg-lime-hover text-navy font-bold text-xs shadow-sm transition transform active:scale-95"
                 >
-                  Sign Up
+                  Get Started
                 </Link>
               </div>
             )}
           </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl text-dark-text hover:bg-light-bg"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-border space-y-3 bg-white">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 text-sm font-medium text-dark-text hover:bg-light-bg rounded-lg"
+            >
+              Home
+            </Link>
+            <Link
+              href="/stations"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 text-sm font-medium text-dark-text hover:bg-light-bg rounded-lg"
+            >
+              Find Stations
+            </Link>
+            {user && (
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 text-sm font-medium text-dark-text hover:bg-light-bg rounded-lg"
+              >
+                Dashboard
+              </Link>
+            )}
+            <div className="pt-2 border-t border-border flex flex-col gap-2">
+              {user ? (
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm font-semibold text-danger"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center px-4 py-2 rounded-xl border border-border text-xs font-semibold"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-center px-4 py-2.5 rounded-xl bg-lime text-navy font-bold text-xs"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

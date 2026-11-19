@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Station, ChargingPoint, Slot } from '@/lib/types';
-import { stationApi, chargerApi, slotApi, bookingApi } from '@/lib/api';
+import { stationApi, slotApi, bookingApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import {
   Zap,
@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   Loader2,
   ShieldCheck,
@@ -41,7 +40,6 @@ export default function StationDetailPage() {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<boolean>(false);
 
-  // Fetch Station & Chargers
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -50,11 +48,8 @@ export default function StationDetailPage() {
         setStation(res.data);
         const cpList = res.data.chargingPoints || [];
         setChargers(cpList);
-        if (cpList.length > 0) {
-          setSelectedCharger(cpList[0]);
-        }
+        if (cpList.length > 0) setSelectedCharger(cpList[0]);
       } else {
-        // Fallback demo station if offline or not in DB
         const fallback: Station = {
           _id: stationId,
           name: 'Downtown SuperCharge Hub',
@@ -71,7 +66,7 @@ export default function StationDetailPage() {
         };
         const demoChargers: ChargingPoint[] = [
           {
-            _id: 'cp-demo-1',
+            _id: 'cp-1',
             station: stationId,
             identifier: 'Bay 01 - Ultra DC',
             connectorType: 'CCS 2 (DC Fast)',
@@ -80,7 +75,7 @@ export default function StationDetailPage() {
             status: 'available',
           },
           {
-            _id: 'cp-demo-2',
+            _id: 'cp-2',
             station: stationId,
             identifier: 'Bay 02 - Rapid DC',
             connectorType: 'CHAdeMO (DC)',
@@ -89,7 +84,7 @@ export default function StationDetailPage() {
             status: 'available',
           },
           {
-            _id: 'cp-demo-3',
+            _id: 'cp-3',
             station: stationId,
             identifier: 'Bay 03 - AC Destination',
             connectorType: 'Type 2 (AC)',
@@ -107,7 +102,6 @@ export default function StationDetailPage() {
     loadData();
   }, [stationId]);
 
-  // Fetch Slots when selected charger or date changes
   useEffect(() => {
     async function loadSlots() {
       if (!selectedCharger) return;
@@ -119,11 +113,10 @@ export default function StationDetailPage() {
       if (res.success && res.data && res.data.length > 0) {
         setSlots(res.data);
       } else {
-        // Fallback demo slots for preview
         const demoTimes = [
           { start: '08:00', end: '09:00', isBooked: false },
           { start: '09:00', end: '10:00', isBooked: false },
-          { start: '10:00', end: '11:00', isBooked: true }, // Booked collision example
+          { start: '10:00', end: '11:00', isBooked: true },
           { start: '11:00', end: '12:00', isBooked: false },
           { start: '13:00', end: '14:00', isBooked: false },
           { start: '14:00', end: '15:00', isBooked: false },
@@ -146,12 +139,11 @@ export default function StationDetailPage() {
     loadSlots();
   }, [selectedCharger, selectedDate]);
 
-  // Handle Booking Confirmation
   const handleConfirmBooking = async () => {
     if (!selectedSlot) return;
 
     if (!user) {
-      setBookingError('Please log in as an EV Driver to book this charging slot.');
+      setBookingError('Please sign in as a driver to complete this reservation.');
       return;
     }
 
@@ -159,18 +151,16 @@ export default function StationDetailPage() {
     setBookingError(null);
 
     const res = await bookingApi.reserve(selectedSlot._id);
-
     setBookingLoading(false);
 
     if (res.success) {
       setBookingSuccess(true);
-      // Mark slot booked locally
       setSlots((prev) =>
         prev.map((s) => (s._id === selectedSlot._id ? { ...s, isBooked: true } : s))
       );
       setTimeout(() => {
-        router.push('/my-bookings');
-      }, 1500);
+        router.push('/dashboard');
+      }, 1400);
     } else {
       setBookingError(
         res.message || 'Slot reservation failed. Another driver may have reserved it.'
@@ -180,9 +170,9 @@ export default function StationDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center text-slate-500 gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-        <span className="text-sm font-medium">Loading station specifications...</span>
+      <div className="py-24 flex flex-col items-center justify-center text-muted-text gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-navy" />
+        <span className="text-xs font-semibold">Loading charging hub details...</span>
       </div>
     );
   }
@@ -190,8 +180,8 @@ export default function StationDetailPage() {
   if (!station) {
     return (
       <div className="max-w-2xl mx-auto py-16 text-center space-y-4">
-        <h2 className="text-xl font-bold text-slate-800">Station Not Found</h2>
-        <Link href="/stations" className="text-sm text-emerald-600 font-semibold">
+        <h2 className="text-xl font-bold text-navy">Station Not Found</h2>
+        <Link href="/stations" className="text-xs text-navy font-bold hover:underline">
           &larr; Back to station directory
         </Link>
       </div>
@@ -203,33 +193,35 @@ export default function StationDetailPage() {
       {/* Back button */}
       <Link
         href="/stations"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-600 transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-text hover:text-navy transition"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Stations
       </Link>
 
       {/* Station Overview Banner */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+      <div className="bg-white rounded-3xl border border-border shadow-sm p-6 sm:p-8 space-y-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-black text-navy tracking-tight">
                 {station.name}
               </h1>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Approved
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-mint text-navy">
+                <CheckCircle2 className="w-3.5 h-3.5 text-navy" /> Verified Hub
               </span>
             </div>
-            <p className="text-sm text-slate-500 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+            <p className="text-xs text-muted-text flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-muted-text shrink-0" />
               {station.address}, {station.city}
             </p>
-            <p className="text-sm text-slate-600 max-w-2xl">{station.description}</p>
+            <p className="text-xs text-dark-text max-w-2xl leading-relaxed">
+              {station.description}
+            </p>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-2 text-xs text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <div className="flex items-center gap-1.5 font-medium text-slate-700">
-              <Clock className="w-4 h-4 text-emerald-600" />
+          <div className="flex flex-col sm:items-end gap-1.5 text-xs text-muted-text bg-light-bg p-4 rounded-2xl border border-border">
+            <div className="flex items-center gap-1.5 font-bold text-navy">
+              <Clock className="w-4 h-4 text-navy" />
               Hours: {station.operatingHours?.open || '00:00'} -{' '}
               {station.operatingHours?.close || '23:59'}
             </div>
@@ -237,14 +229,13 @@ export default function StationDetailPage() {
           </div>
         </div>
 
-        {/* Amenities */}
         {station.amenities && station.amenities.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-            <span className="text-xs font-semibold text-slate-500 mr-2">Amenities:</span>
+          <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-border">
+            <span className="text-xs font-bold text-navy mr-2">Amenities:</span>
             {station.amenities.map((a, i) => (
               <span
                 key={i}
-                className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-100"
+                className="px-2.5 py-1 rounded-xl bg-light-bg text-dark-text text-xs font-medium border border-border"
               >
                 {a}
               </span>
@@ -255,13 +246,13 @@ export default function StationDetailPage() {
 
       {/* Booking Grid: Step 1 Charger Selector + Step 2 Slot Picker */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Step 1: Select Charging Point (5 cols) */}
+        {/* Step 1: Select Charging Bay (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-xl bg-navy text-lime text-xs font-black flex items-center justify-center">
               1
             </span>
-            <h2 className="text-lg font-bold text-slate-900">Select Charging Point</h2>
+            <h2 className="text-lg font-black text-navy">Select Charging Bay</h2>
           </div>
 
           <div className="space-y-3">
@@ -275,39 +266,33 @@ export default function StationDetailPage() {
                   onClick={() => isAvailable && setSelectedCharger(charger)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                     !isAvailable
-                      ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                      ? 'bg-light-bg border-border opacity-50 cursor-not-allowed'
                       : isSelected
-                      ? 'bg-emerald-50/40 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
-                      : 'bg-white border-slate-200 hover:border-emerald-300'
+                      ? 'bg-light-bg border-navy shadow-sm ring-2 ring-lime/40'
+                      : 'bg-white border-border hover:border-navy/40'
                   }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-bold text-slate-900 text-sm">
-                        {charger.identifier}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        {charger.connectorType}
-                      </div>
+                      <div className="font-bold text-navy text-sm">{charger.identifier}</div>
+                      <div className="text-xs text-muted-text mt-0.5">{charger.connectorType}</div>
                     </div>
 
                     <span
-                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        isAvailable
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-700'
+                      className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                        isAvailable ? 'bg-mint text-navy' : 'bg-border text-muted-text'
                       }`}
                     >
                       {charger.status}
                     </span>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700 flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <span className="font-bold text-navy flex items-center gap-1">
+                      <Zap className="w-3.5 h-3.5 text-navy fill-navy" />
                       {charger.powerKw} kW Power
                     </span>
-                    <span className="font-bold text-emerald-700">
+                    <span className="font-black text-navy">
                       ${charger.pricingPerKwh.toFixed(2)} / kWh
                     </span>
                   </div>
@@ -317,58 +302,50 @@ export default function StationDetailPage() {
           </div>
         </div>
 
-        {/* Step 2: Select Date & Available Time Slot (7 cols) */}
+        {/* Step 2: Select Date & Time Slot (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-xl bg-navy text-lime text-xs font-black flex items-center justify-center">
                 2
               </span>
-              <h2 className="text-lg font-bold text-slate-900">Choose Date & Time Slot</h2>
+              <h2 className="text-lg font-black text-navy">Choose Time Slot</h2>
             </div>
 
-            {/* Date Selector */}
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-400" />
+              <Calendar className="w-4 h-4 text-muted-text" />
               <input
                 type="date"
                 value={selectedDate}
                 min={todayStr}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-border focus:outline-none focus:border-navy text-navy bg-white"
               />
             </div>
           </div>
 
           {/* Slot Legend */}
-          <div className="flex items-center gap-4 text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
+          <div className="flex items-center gap-4 text-xs text-muted-text bg-white p-3.5 rounded-2xl border border-border">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-emerald-500" />
+              <span className="w-3 h-3 rounded-md bg-mint border border-navy/20" />
               <span>Available</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-slate-300" />
-              <span>Booked (Collision Protected)</span>
+              <span className="w-3 h-3 rounded-md bg-light-bg border border-border" />
+              <span>Booked (Protected)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-emerald-700 ring-2 ring-emerald-300" />
+              <span className="w-3 h-3 rounded-md bg-navy" />
               <span>Selected</span>
             </div>
           </div>
 
           {/* Slots Grid */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm space-y-6">
             {loadingSlots ? (
-              <div className="py-16 flex flex-col items-center justify-center text-slate-400 gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-                <span className="text-xs">Fetching slot availability...</span>
-              </div>
-            ) : slots.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400 space-y-2">
-                <p>No defined slots found for this date.</p>
-                <p className="text-[11px] text-slate-400">
-                  Station operators can define daily slots via the Operator Dashboard.
-                </p>
+              <div className="py-16 flex flex-col items-center justify-center text-muted-text gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-navy" />
+                <span className="text-xs font-medium">Checking live slot availability...</span>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -381,18 +358,18 @@ export default function StationDetailPage() {
                       key={slot._id}
                       disabled={isBooked}
                       onClick={() => setSelectedSlot(slot)}
-                      className={`p-3 rounded-xl text-center font-medium transition-all text-xs flex flex-col items-center justify-center gap-1 ${
+                      className={`p-3 rounded-2xl text-center font-bold transition-all text-xs flex flex-col items-center justify-center gap-1 ${
                         isBooked
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed line-through'
+                          ? 'bg-light-bg text-muted-text border border-border cursor-not-allowed line-through opacity-60'
                           : isSelected
-                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500'
-                          : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          ? 'bg-navy text-lime shadow-md ring-2 ring-lime/50'
+                          : 'bg-light-bg hover:bg-mint text-navy border border-border'
                       }`}
                     >
-                      <span className="font-bold">
+                      <span>
                         {slot.startTime} - {slot.endTime}
                       </span>
-                      <span className="text-[10px] opacity-80">
+                      <span className="text-[10px] font-normal opacity-80">
                         {isBooked ? 'Reserved' : 'Available'}
                       </span>
                     </button>
@@ -401,41 +378,42 @@ export default function StationDetailPage() {
               </div>
             )}
 
-            {/* Error or Success notification */}
             {bookingError && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-danger text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
                 <span>{bookingError}</span>
               </div>
             )}
 
             {bookingSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Reservation confirmed! Redirecting to your bookings...</span>
+              <div className="p-3 rounded-xl bg-mint text-navy text-xs font-bold flex items-center gap-2">
+                <Check className="w-4 h-4 text-navy shrink-0" />
+                <span>Slot reserved with zero collision! Redirecting to dashboard...</span>
               </div>
             )}
 
             {/* Action Bar */}
-            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="text-xs text-slate-500">Selected Reservation</div>
-                <div className="text-sm font-bold text-slate-800">
+                <div className="text-[11px] text-muted-text font-semibold uppercase">
+                  Reservation Target
+                </div>
+                <div className="text-sm font-black text-navy">
                   {selectedSlot
                     ? `${selectedDate} @ ${selectedSlot.startTime} - ${selectedSlot.endTime}`
-                    : 'Select an available slot above'}
+                    : 'Choose an open time slot above'}
                 </div>
               </div>
 
               <button
                 disabled={!selectedSlot || bookingLoading || bookingSuccess}
                 onClick={handleConfirmBooking}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-lime hover:bg-lime-hover text-navy font-black text-xs shadow-md shadow-lime/20 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {bookingLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Locking Slot & Reserving...
+                    Locking Slot...
                   </>
                 ) : (
                   <>

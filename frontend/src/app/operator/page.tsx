@@ -12,11 +12,8 @@ import {
   Clock,
   MapPin,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   Loader2,
-  Layers,
-  Edit2,
   Trash2,
   RefreshCw,
 } from 'lucide-react';
@@ -46,7 +43,6 @@ export default function OperatorPage() {
 
   // Charging Points State
   const [chargers, setChargers] = useState<ChargingPoint[]>([]);
-  const [loadingChargers, setLoadingChargers] = useState(false);
   const [showAddCharger, setShowAddCharger] = useState(false);
   const [chargerForm, setChargerForm] = useState<{
     identifier: string;
@@ -69,21 +65,15 @@ export default function OperatorPage() {
 
   // Bookings State
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loadingBookings, setLoadingBookings] = useState(false);
-
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Load operator stations
   const loadMyStations = async () => {
     setLoadingStations(true);
     const res = await stationApi.getMyStations();
     if (res.success && res.data && res.data.length > 0) {
       setStations(res.data);
-      if (!selectedStationId) {
-        setSelectedStationId(res.data[0]._id);
-      }
+      if (!selectedStationId) setSelectedStationId(res.data[0]._id);
     } else {
-      // Demo fallback
       const demo: Station[] = [
         {
           _id: 'op-st-1',
@@ -107,16 +97,12 @@ export default function OperatorPage() {
     setLoadingStations(false);
   };
 
-  // Load chargers for selected station
   const loadChargers = async (stId: string) => {
     if (!stId) return;
-    setLoadingChargers(true);
     const res = await chargerApi.getByStation(stId);
     if (res.success && res.data) {
       setChargers(res.data);
-      if (res.data.length > 0) {
-        setSelectedChargerId(res.data[0]._id);
-      }
+      if (res.data.length > 0) setSelectedChargerId(res.data[0]._id);
     } else {
       const demoChargers: ChargingPoint[] = [
         {
@@ -141,18 +127,14 @@ export default function OperatorPage() {
       setChargers(demoChargers);
       setSelectedChargerId(demoChargers[0]._id);
     }
-    setLoadingChargers(false);
   };
 
-  // Load bookings on operator stations
   const loadBookings = async () => {
-    setLoadingBookings(true);
     const res = await bookingApi.getOperatorBookings();
     if (res.success && res.data) {
       setBookings(res.data);
     } else {
-      // Demo preview booking
-      const demo: Booking[] = [
+      setBookings([
         {
           _id: 'bk-demo-op-1',
           user: { _id: 'u1', name: 'Alex Johnson', email: 'alex@driver.com', phone: '+1-555-0103' },
@@ -166,10 +148,8 @@ export default function OperatorPage() {
           status: 'confirmed',
           createdAt: new Date().toISOString(),
         },
-      ];
-      setBookings(demo);
+      ]);
     }
-    setLoadingBookings(false);
   };
 
   useEffect(() => {
@@ -177,18 +157,13 @@ export default function OperatorPage() {
   }, [user]);
 
   useEffect(() => {
-    if (selectedStationId) {
-      loadChargers(selectedStationId);
-    }
+    if (selectedStationId) loadChargers(selectedStationId);
   }, [selectedStationId]);
 
   useEffect(() => {
-    if (activeTab === 'bookings') {
-      loadBookings();
-    }
+    if (activeTab === 'bookings') loadBookings();
   }, [activeTab]);
 
-  // Create Station
   const handleCreateStation = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -206,7 +181,7 @@ export default function OperatorPage() {
 
     if (res.success) {
       setMessage({
-        text: 'Station submitted successfully and sent for Admin approval!',
+        text: 'Station submitted successfully and sent for Admin verification!',
         type: 'success',
       });
       setShowAddStation(false);
@@ -216,7 +191,6 @@ export default function OperatorPage() {
     }
   };
 
-  // Create Charging Point
   const handleCreateCharger = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStationId) return;
@@ -239,7 +213,6 @@ export default function OperatorPage() {
     }
   };
 
-  // Toggle Charger Status
   const handleToggleChargerStatus = async (charger: ChargingPoint) => {
     const nextStatus = charger.status === 'available' ? 'maintenance' : 'available';
     const res = await chargerApi.update(charger._id, { status: nextStatus });
@@ -250,10 +223,9 @@ export default function OperatorPage() {
     }
   };
 
-  // Bulk Generate Daily Slots
   const handleGenerateSlots = async () => {
     if (!selectedChargerId) {
-      alert('Please select a charging point first.');
+      alert('Please select a charging bay first.');
       return;
     }
 
@@ -279,7 +251,6 @@ export default function OperatorPage() {
     }
   };
 
-  // Update Booking Status
   const handleUpdateBookingStatus = async (id: string, status: BookingStatus) => {
     const res = await bookingApi.updateStatus(id, status);
     if (res.success) {
@@ -294,20 +265,20 @@ export default function OperatorPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-semibold uppercase tracking-wider mb-2">
-            <UserCheck className="w-3.5 h-3.5 text-teal-600" /> Operator Management Portal
-          </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Station & Slot Operations
+          <span className="text-xs font-extrabold uppercase tracking-widest text-navy bg-mint px-3 py-1 rounded-full">
+            Operator Management
+          </span>
+          <h1 className="text-3xl font-black text-navy tracking-tight mt-2">
+            Charging Hub Operations
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Manage physical charging hubs, configure charger bays, and generate booking time slots
+          <p className="text-xs sm:text-sm text-muted-text mt-0.5">
+            Configure station parameters, manage chargers, and partition daily reservation slots
           </p>
         </div>
 
         <button
           onClick={() => setShowAddStation(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm transition self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-navy text-lime font-bold text-xs shadow-md transition active:scale-95"
         >
           <Plus className="w-4 h-4" /> Add New Station
         </button>
@@ -315,29 +286,29 @@ export default function OperatorPage() {
 
       {message && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+          className={`p-3.5 rounded-2xl border text-xs flex items-center gap-2 ${
             message.type === 'success'
-              ? 'bg-teal-50 border-teal-200 text-teal-800'
-              : 'bg-rose-50 border-rose-200 text-rose-800'
+              ? 'bg-mint text-navy border-navy/20 font-bold'
+              : 'bg-rose-50 border-rose-200 text-danger'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-navy shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-danger shrink-0" />
           )}
           <span>{message.text}</span>
         </div>
       )}
 
-      {/* Operator Tabs */}
-      <div className="flex border-b border-slate-200 gap-6 text-sm font-semibold">
+      {/* Tabs */}
+      <div className="flex border-b border-border gap-8 text-xs font-bold uppercase tracking-wider">
         <button
           onClick={() => setActiveTab('stations')}
           className={`pb-3 border-b-2 transition ${
             activeTab === 'stations'
-              ? 'border-teal-600 text-teal-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-navy text-navy'
+              : 'border-transparent text-muted-text hover:text-navy'
           }`}
         >
           1. Stations ({stations.length})
@@ -346,28 +317,28 @@ export default function OperatorPage() {
           onClick={() => setActiveTab('chargers')}
           className={`pb-3 border-b-2 transition ${
             activeTab === 'chargers'
-              ? 'border-teal-600 text-teal-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-navy text-navy'
+              : 'border-transparent text-muted-text hover:text-navy'
           }`}
         >
-          2. Charging Points ({chargers.length})
+          2. Charging Bays ({chargers.length})
         </button>
         <button
           onClick={() => setActiveTab('slots')}
           className={`pb-3 border-b-2 transition ${
             activeTab === 'slots'
-              ? 'border-teal-600 text-teal-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-navy text-navy'
+              : 'border-transparent text-muted-text hover:text-navy'
           }`}
         >
-          3. Slot Generator
+          3. Slot Batch Generator
         </button>
         <button
           onClick={() => setActiveTab('bookings')}
           className={`pb-3 border-b-2 transition ${
             activeTab === 'bookings'
-              ? 'border-teal-600 text-teal-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'border-navy text-navy'
+              : 'border-transparent text-muted-text hover:text-navy'
           }`}
         >
           4. Driver Reservations ({bookings.length})
@@ -376,58 +347,56 @@ export default function OperatorPage() {
 
       {/* TAB 1: Stations */}
       {activeTab === 'stations' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stations.map((st) => (
-              <div
-                key={st._id}
-                onClick={() => setSelectedStationId(st._id)}
-                className={`p-5 rounded-2xl border transition bg-white cursor-pointer ${
-                  selectedStationId === st._id
-                    ? 'border-teal-500 shadow-md ring-2 ring-teal-500/20'
-                    : 'border-slate-200 hover:border-teal-300 shadow-sm'
-                }`}
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="font-bold text-slate-900 text-base">{st.name}</h3>
-                  <span
-                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                      st.status === 'approved'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : st.status === 'rejected'
-                        ? 'bg-rose-100 text-rose-800'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    {st.status}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-500 flex items-center gap-1 mt-2">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  {st.address}, {st.city}
-                </p>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Chargers: {st.totalChargers ?? 0}</span>
-                  <span className="text-teal-600 font-semibold">Select to manage &rarr;</span>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {stations.map((st) => (
+            <div
+              key={st._id}
+              onClick={() => setSelectedStationId(st._id)}
+              className={`p-5 rounded-2xl border transition bg-white cursor-pointer ${
+                selectedStationId === st._id
+                  ? 'border-navy shadow-md ring-2 ring-lime/50'
+                  : 'border-border hover:border-navy/40 shadow-2xs'
+              }`}
+            >
+              <div className="flex justify-between items-start gap-2">
+                <h3 className="font-bold text-navy text-base">{st.name}</h3>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    st.status === 'approved'
+                      ? 'bg-mint text-navy'
+                      : st.status === 'rejected'
+                      ? 'bg-rose-100 text-danger'
+                      : 'bg-amber-100 text-warning'
+                  }`}
+                >
+                  {st.status}
+                </span>
               </div>
-            ))}
-          </div>
+
+              <p className="text-xs text-muted-text flex items-center gap-1 mt-2">
+                <MapPin className="w-3.5 h-3.5 text-muted-text shrink-0" />
+                {st.address}, {st.city}
+              </p>
+
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-text">
+                <span>Bays: {st.totalChargers ?? 3}</span>
+                <span className="text-navy font-bold">Select to manage &rarr;</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* TAB 2: Charging Points */}
       {activeTab === 'chargers' && (
         <div className="space-y-6">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-border flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-500">Managing Station:</span>
+              <span className="text-xs font-bold text-navy">Target Station:</span>
               <select
                 value={selectedStationId}
                 onChange={(e) => setSelectedStationId(e.target.value)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 focus:outline-none"
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-border focus:outline-none"
               >
                 {stations.map((s) => (
                   <option key={s._id} value={s._id}>
@@ -439,9 +408,9 @@ export default function OperatorPage() {
 
             <button
               onClick={() => setShowAddCharger(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-navy text-lime text-xs font-bold transition"
             >
-              <Plus className="w-3.5 h-3.5" /> Add Charger
+              <Plus className="w-3.5 h-3.5" /> Add Bay
             </button>
           </div>
 
@@ -449,29 +418,29 @@ export default function OperatorPage() {
             {chargers.map((ch) => (
               <div
                 key={ch._id}
-                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3"
+                className="bg-white p-5 rounded-2xl border border-border shadow-2xs space-y-3"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{ch.identifier}</h4>
-                    <span className="text-xs text-slate-500">{ch.connectorType}</span>
+                    <h4 className="font-bold text-navy text-sm">{ch.identifier}</h4>
+                    <span className="text-xs text-muted-text">{ch.connectorType}</span>
                   </div>
 
                   <button
                     onClick={() => handleToggleChargerStatus(ch)}
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${
+                    className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full transition ${
                       ch.status === 'available'
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                        ? 'bg-mint text-navy hover:opacity-80'
+                        : 'bg-amber-100 text-warning hover:opacity-80'
                     }`}
                   >
-                    {ch.status.toUpperCase()}
+                    {ch.status}
                   </button>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-600 font-medium">{ch.powerKw} kW Power</span>
-                  <span className="text-teal-700 font-bold">${ch.pricingPerKwh.toFixed(2)}/kWh</span>
+                <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                  <span className="text-dark-text font-bold">{ch.powerKw} kW Power</span>
+                  <span className="text-navy font-black">${ch.pricingPerKwh.toFixed(2)}/kWh</span>
                 </div>
               </div>
             ))}
@@ -481,62 +450,62 @@ export default function OperatorPage() {
 
       {/* TAB 3: Slot Generator */}
       {activeTab === 'slots' && (
-        <div className="max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div className="max-w-lg mx-auto bg-white p-8 rounded-3xl border border-border shadow-sm space-y-6">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-slate-900">Define Available Charging Slots</h3>
-            <p className="text-xs text-slate-500">
-              Bulk-generate 1-hour reservation windows for customers on any given day
+            <h3 className="text-lg font-black text-navy">Partition Available Slots</h3>
+            <p className="text-xs text-muted-text">
+              1-Click generate 1-hour customer reservation slots for any chosen date
             </p>
           </div>
 
           <div className="space-y-4 text-xs">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Target Charger Bay</label>
+              <label className="block text-dark-text font-bold mb-1">Target Charging Bay</label>
               <select
                 value={selectedChargerId}
                 onChange={(e) => setSelectedChargerId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-border text-navy font-semibold focus:outline-none"
               >
                 {chargers.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.identifier} — {c.connectorType} ({c.powerKw} kW)
+                    {c.identifier} &bull; {c.connectorType} ({c.powerKw} kW)
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Date</label>
+              <label className="block text-dark-text font-bold mb-1">Date</label>
               <input
                 type="date"
                 value={slotDate}
                 onChange={(e) => setSlotDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-border text-navy font-semibold focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Start Hour (24hr)</label>
+                <label className="block text-dark-text font-bold mb-1">Start Hour (24h)</label>
                 <input
                   type="number"
                   min="0"
                   max="23"
                   value={startHour}
                   onChange={(e) => setStartHour(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-border text-navy font-semibold focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">End Hour (24hr)</label>
+                <label className="block text-dark-text font-bold mb-1">End Hour (24h)</label>
                 <input
                   type="number"
                   min="1"
                   max="24"
                   value={endHour}
                   onChange={(e) => setEndHour(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-border text-navy font-semibold focus:outline-none"
                 />
               </div>
             </div>
@@ -544,9 +513,9 @@ export default function OperatorPage() {
             <button
               onClick={handleGenerateSlots}
               disabled={generatingSlots}
-              className="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-sm transition disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-lime hover:bg-lime-hover text-navy font-black shadow-md transition disabled:opacity-50"
             >
-              {generatingSlots ? 'Generating Daily Slots...' : 'Generate Daily Booking Slots'}
+              {generatingSlots ? 'Generating Daily Slots...' : 'Generate Customer Slots'}
             </button>
           </div>
         </div>
@@ -554,54 +523,48 @@ export default function OperatorPage() {
 
       {/* TAB 4: Customer Bookings */}
       {activeTab === 'bookings' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-3xl border border-border overflow-hidden shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-semibold uppercase border-b border-slate-200">
+              <thead className="bg-light-bg text-muted-text font-bold uppercase tracking-wider border-b border-border">
                 <tr>
                   <th className="px-5 py-3">Driver Name</th>
-                  <th className="px-5 py-3">Station & Bay</th>
+                  <th className="px-5 py-3">Hub & Bay</th>
                   <th className="px-5 py-3">Date & Time</th>
                   <th className="px-5 py-3">Amount</th>
                   <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Actions</th>
+                  <th className="px-5 py-3">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {bookings.map((b) => {
                   const driver = b.user as any;
                   const station = b.station as any;
                   const cp = b.chargingPoint as any;
 
                   return (
-                    <tr key={b._id} className="hover:bg-slate-50">
-                      <td className="px-5 py-3.5 font-bold text-slate-900">
+                    <tr key={b._id} className="hover:bg-light-bg">
+                      <td className="px-5 py-3.5 font-bold text-navy">
                         {driver?.name || 'Driver'}
-                        <div className="text-[10px] text-slate-400 font-normal">
-                          {driver?.email}
-                        </div>
+                        <div className="text-[10px] text-muted-text font-normal">{driver?.email}</div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="font-semibold text-slate-800">{station?.name}</div>
-                        <div className="text-slate-400 text-[10px]">{cp?.identifier}</div>
+                        <div className="font-bold text-dark-text">{station?.name}</div>
+                        <div className="text-muted-text text-[10px]">{cp?.identifier}</div>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-700">
-                        <div className="font-medium">{b.date}</div>
-                        <div className="text-slate-400 text-[10px]">
-                          {b.startTime} - {b.endTime}
-                        </div>
+                      <td className="px-5 py-3.5 text-dark-text">
+                        <div className="font-semibold">{b.date}</div>
+                        <div className="text-muted-text text-[10px]">{b.startTime} - {b.endTime}</div>
                       </td>
-                      <td className="px-5 py-3.5 font-bold text-slate-900">
-                        ${b.totalAmount.toFixed(2)}
-                      </td>
+                      <td className="px-5 py-3.5 font-black text-navy">${b.totalAmount.toFixed(2)}</td>
                       <td className="px-5 py-3.5">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                             b.status === 'confirmed'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-mint text-navy'
                               : b.status === 'completed'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-slate-100 text-slate-700'
+                              ? 'bg-navy text-white'
+                              : 'bg-light-bg text-muted-text'
                           }`}
                         >
                           {b.status}
@@ -613,7 +576,7 @@ export default function OperatorPage() {
                           onChange={(e) =>
                             handleUpdateBookingStatus(b._id, e.target.value as BookingStatus)
                           }
-                          className="px-2 py-1 rounded border border-slate-200 text-slate-700 font-medium focus:outline-none"
+                          className="px-2.5 py-1 rounded-lg border border-border text-navy font-bold focus:outline-none"
                         >
                           <option value="confirmed">Confirmed</option>
                           <option value="completed">Completed</option>
@@ -631,59 +594,59 @@ export default function OperatorPage() {
 
       {/* Modal: Add Station */}
       {showAddStation && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900">Register New Charging Hub</h3>
+        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-border">
+              <h3 className="font-black text-navy text-lg">Register Charging Hub</h3>
               <button
                 onClick={() => setShowAddStation(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-text hover:text-navy text-xl font-bold"
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleCreateStation} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateStation} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Hub Name</label>
+                <label className="block text-dark-text font-bold mb-1">Hub Name</label>
                 <input
                   type="text"
                   required
                   value={stationForm.name}
                   onChange={(e) => setStationForm({ ...stationForm, name: e.target.value })}
                   placeholder="e.g. Metro SuperCharge Station"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Street Address</label>
+                  <label className="block text-dark-text font-bold mb-1">Street Address</label>
                   <input
                     type="text"
                     required
                     value={stationForm.address}
                     onChange={(e) => setStationForm({ ...stationForm, address: e.target.value })}
-                    placeholder="123 Energy Way"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    placeholder="100 Main Street"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">City</label>
+                  <label className="block text-dark-text font-bold mb-1">City</label>
                   <input
                     type="text"
                     required
                     value={stationForm.city}
                     onChange={(e) => setStationForm({ ...stationForm, city: e.target.value })}
                     placeholder="Metro City"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Latitude</label>
+                  <label className="block text-dark-text font-bold mb-1">Latitude</label>
                   <input
                     type="number"
                     step="any"
@@ -692,11 +655,11 @@ export default function OperatorPage() {
                     onChange={(e) =>
                       setStationForm({ ...stationForm, latitude: parseFloat(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Longitude</label>
+                  <label className="block text-dark-text font-bold mb-1">Longitude</label>
                   <input
                     type="number"
                     step="any"
@@ -705,37 +668,24 @@ export default function OperatorPage() {
                     onChange={(e) =>
                       setStationForm({ ...stationForm, longitude: parseFloat(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Amenities (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={stationForm.amenities}
-                  onChange={(e) => setStationForm({ ...stationForm, amenities: e.target.value })}
-                  placeholder="Restrooms, Café, High-Speed WiFi"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
-                />
               </div>
 
               <div className="pt-3 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddStation(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-border text-muted-text font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+                  className="px-5 py-2 rounded-xl bg-navy text-lime font-bold shadow-md"
                 >
-                  Submit Station
+                  Submit for Approval
                 </button>
               </div>
             </form>
@@ -745,21 +695,21 @@ export default function OperatorPage() {
 
       {/* Modal: Add Charger */}
       {showAddCharger && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900">Add Charging Bay</h3>
+        <div className="fixed inset-0 z-50 bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-border">
+              <h3 className="font-black text-navy text-base">Add Charger Bay</h3>
               <button
                 onClick={() => setShowAddCharger(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-text hover:text-navy text-xl font-bold"
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleCreateCharger} className="space-y-3 text-xs">
+            <form onSubmit={handleCreateCharger} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Identifier</label>
+                <label className="block text-dark-text font-bold mb-1">Identifier</label>
                 <input
                   type="text"
                   required
@@ -768,12 +718,12 @@ export default function OperatorPage() {
                   onChange={(e) =>
                     setChargerForm({ ...chargerForm, identifier: e.target.value })
                   }
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Connector Type</label>
+                <label className="block text-dark-text font-bold mb-1">Connector Type</label>
                 <select
                   value={chargerForm.connectorType}
                   onChange={(e) =>
@@ -782,7 +732,7 @@ export default function OperatorPage() {
                       connectorType: e.target.value as ConnectorType,
                     })
                   }
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                 >
                   <option value="CCS 2 (DC Fast)">CCS 2 (DC Fast)</option>
                   <option value="CHAdeMO (DC)">CHAdeMO (DC)</option>
@@ -794,7 +744,7 @@ export default function OperatorPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Power (kW)</label>
+                  <label className="block text-dark-text font-bold mb-1">Power (kW)</label>
                   <input
                     type="number"
                     required
@@ -803,11 +753,11 @@ export default function OperatorPage() {
                     onChange={(e) =>
                       setChargerForm({ ...chargerForm, powerKw: Number(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Rate ($/kWh)</label>
+                  <label className="block text-dark-text font-bold mb-1">Rate ($/kWh)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -817,7 +767,7 @@ export default function OperatorPage() {
                     onChange={(e) =>
                       setChargerForm({ ...chargerForm, pricingPerKwh: Number(e.target.value) })
                     }
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-border focus:outline-none"
                   />
                 </div>
               </div>
@@ -826,15 +776,15 @@ export default function OperatorPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddCharger(false)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 font-semibold"
+                  className="px-4 py-2 rounded-xl border border-border text-muted-text font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+                  className="px-4 py-2 rounded-xl bg-navy text-lime font-bold shadow-md"
                 >
-                  Save Charger
+                  Save Bay
                 </button>
               </div>
             </form>
