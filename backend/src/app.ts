@@ -11,7 +11,22 @@ export const createApp = (): Application => {
   // Middleware
   app.use(
     cors({
-      origin: [ENV.CLIENT_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
+        const allowed = [
+          ENV.CLIENT_URL,
+          'http://localhost:3000',
+          'http://127.0.0.1:3000',
+        ];
+        // Allow any vercel.app subdomain (covers preview + production deploys)
+        const isVercel = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+        if (isVercel || allowed.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`CORS: origin ${origin} not allowed`));
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],

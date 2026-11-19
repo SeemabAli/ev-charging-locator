@@ -1,5 +1,9 @@
 version: '3.8'
 
+# EC2 Deployment: Backend only.
+# Frontend is deployed to Vercel (auto-deploys on push to main).
+# Database is on MongoDB Atlas (cloud).
+
 services:
   backend:
     build:
@@ -10,30 +14,13 @@ services:
     environment:
       - PORT=5000
       - NODE_ENV=production
-      - MONGO_URI=${MONGO_URI:-mongodb+srv://seemabali_db_user:3ktpCcRHNK1TdTFk@ev-charger-db.ku05swu.mongodb.net/ev-chargepoint?retryWrites=true&w=majority}
-      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_production_change_me}
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=7d
-      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+      # Set CLIENT_URL to your Vercel frontend URL after first deploy
+      - CLIENT_URL=${CLIENT_URL:-https://ev-charging-locator.vercel.app}
     ports:
       - "5000:5000"
-    networks:
-      - ev-network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000}
-    container_name: ev-chargepoint-frontend
-    restart: always
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
     networks:
       - ev-network
 

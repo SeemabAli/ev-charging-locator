@@ -8,14 +8,12 @@ on:
 
 jobs:
   # ==========================================
-  # 1. Continuous Integration: Lint & Build
+  # 1. CI — Build & verify backend only
+  #    (Frontend is built and deployed by Vercel automatically)
   # ==========================================
-  ci:
-    name: Build & Verify
+  ci-backend:
+    name: Backend — Build & Verify
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [backend, frontend]
 
     steps:
       - name: Checkout Source Code
@@ -26,27 +24,27 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
-      - name: Install Dependencies
-        working-directory: ${{ matrix.service }}
+      - name: Install Backend Dependencies
+        working-directory: backend
         run: npm ci
 
-      - name: Compile & Build
-        working-directory: ${{ matrix.service }}
+      - name: Compile Backend TypeScript
+        working-directory: backend
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:5000
           PORT: 5000
           NODE_ENV: test
           JWT_SECRET: test_jwt_secret_key_12345
+          MONGO_URI: mongodb://localhost:27017/test
         run: npm run build
 
   # ==========================================
-  # 2. Container Build Verification
+  # 2. Docker Build Verification (backend only)
   # ==========================================
   docker-build:
-    name: Verify Docker Images
-    needs: ci
+    name: Verify Backend Docker Image
+    needs: ci-backend
     runs-on: ubuntu-latest
 
     steps:
@@ -54,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Backend Docker Image
         uses: docker/build-push-action@v5
@@ -63,21 +61,12 @@ jobs:
           push: false
           tags: ev-chargepoint-backend:latest
 
-      - name: Build Frontend Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          build-args: |
-            NEXT_PUBLIC_API_URL=http://localhost:5000
-          push: false
-          tags: ev-chargepoint-frontend:latest
-
   # ==========================================
-  # 3. Continuous Deployment to AWS EC2
+  # 3. Deploy Backend to AWS EC2
   # ==========================================
   deploy:
-    name: Deploy to AWS EC2
-    needs: [ci, docker-build]
+    name: Deploy Backend to AWS EC2
+    needs: [ci-backend, docker-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
@@ -85,58 +74,59 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH to EC2 Server
+      - name: Deploy via SSH to EC2
         uses: appleboy/ssh-action@v1.0.3
-        if: env.EC2_HOST != ''
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
+          port: 22
           script_stop: true
           script: |
-            echo "⚡ Starting EV ChargePoint Deployment on AWS EC2..."
-            
-            # Ensure target directory exists
-            DEPLOY_DIR="~/ev-chargepoint"
+            echo "⚡ Deploying EV ChargePoint Backend to EC2..."
+
+            DEPLOY_DIR="$HOME/ev-chargepoint"
+
+            # Clone repo on first deploy
             if [ ! -d "$DEPLOY_DIR" ]; then
-              echo "Cloning repository..."
-              git clone https://github.com/${{ github.repository }}.git $DEPLOY_DIR
+              echo "First deploy — cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git "$DEPLOY_DIR"
             fi
-            
-            cd $DEPLOY_DIR
-            
-            echo "Pulling latest changes from main branch..."
+
+            cd "$DEPLOY_DIR"
+
+            echo "Pulling latest changes..."
             git checkout main
             git pull origin main
-            
-            # Create production .env if not exists
+
+            # Write backend .env on first deploy (secrets come from GitHub)
             if [ ! -f "backend/.env" ]; then
-              echo "Configuring production backend environment..."
-              echo "PORT=5000" > backend/.env
-              echo "NODE_ENV=production" >> backend/.env
-              echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> backend/.env
-              echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> backend/.env
-              echo "CLIENT_URL=http://${{ secrets.EC2_HOST }}" >> backend/.env
+              echo "Creating backend .env from GitHub secrets..."
+              cat > backend/.env << EOF
+            PORT=5000
+            NODE_ENV=production
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            CLIENT_URL=${{ secrets.CLIENT_URL }}
+            JWT_EXPIRES_IN=7d
+            EOF
             fi
-            
-            echo "Rebuilding and deploying containers with Docker Compose..."
+
+            echo "Rebuilding and starting backend container..."
             docker compose down --remove-orphans || true
             docker compose up -d --build
-            
-            echo "Pruning dangling docker images..."
+
+            echo "Pruning old Docker images..."
             docker image prune -f
-            
-            echo "Waiting for services to become healthy..."
+
+            echo "Waiting for backend to start (15s)..."
             sleep 15
-            
-            # Check backend health
+
+            echo "Running health check..."
             curl --fail http://localhost:5000/api/health || {
               echo "❌ Health check failed!"
               docker compose logs --tail=50
               exit 1
             }
-            
-            echo "✅ EV ChargePoint successfully deployed and verified healthy on AWS EC2!"
+
+            echo "✅ Backend deployed and healthy on EC2!"
